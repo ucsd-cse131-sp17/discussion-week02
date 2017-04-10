@@ -2,6 +2,10 @@ open List;;
 open Helper;;
 open OUnit2;;
 
+(* git page:
+   https://github.com/ucsd-cse131-sp17/discussion-week02
+ *)
+
 (* OCAML:
    1. Everything is an expression
    2. Everything has a value
