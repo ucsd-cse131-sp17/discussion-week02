@@ -82,7 +82,7 @@ let first (tup : ('a * 'b)) : 'a =
 
 (* Variables *)
 
-let _ = let x = 1               (* bind the value 1 to the variable x *)
+let var0 = let x = 1               (* bind the value 1 to the variable x *)
         in  x + 1               (* inside this expression *)
 ;;
 
@@ -108,6 +108,7 @@ let var2 = let x = 10
 let (var3,var4,var5) = 
   (2+3, "a" ^ "b", 1::[2])
 ;;
+                  
 
 
 (* why the following produces a warning? *)
@@ -178,7 +179,7 @@ let f5 = fun f x -> not (f x)
 ;;
 
 (* what is the type of the following expression ? *)
-(* let _ = fun f -> fun x -> (f x) + x *)
+(* let ff = fun f -> fun x -> (f x) + x *)
 (* ;; *)
 
 (* ***************************************************************** *)
@@ -186,15 +187,23 @@ let f5 = fun f x -> not (f x)
 (* Examples: *)
 
 let rec filter (pred: 'a -> bool) (l: 'a list) : 'a list =
-  []
+  match l with
+  | [] -> []
+  | h::t -> if pred h
+            then h :: (filter pred t)
+            else      (filter pred t)
 ;;
 
 let partition (pred: 'a -> bool) (l: 'a list) : ('a list * 'a list) = 
-  ([],[])
+  (filter pred l, filter (fun x -> not (pred x)) l)
 ;;
 
-let quicksort (xs : 'a list) : 'a list =
-  []
+let rec quicksort (l : 'a list) : 'a list =
+  match l with
+  | [] -> []
+  | h::t -> let (lhs,rhs) = partition (fun x -> x < h) t in
+            let (lhs',rhs') = (quicksort lhs, quicksort rhs) in
+            lhs' @ [h] @ rhs'
 ;;
 
 (* ***************************************************************** *)
@@ -204,21 +213,28 @@ let quicksort (xs : 'a list) : 'a list =
 (* Data types *)
 
 type peano = 
-  | Zero
-  | Succ of peano
+  | Zero                        (* 0 *)
+  | Succ of peano               (* p + 1 *)
 ;;
 
 let rec add (x: 'peano) (y: 'peano) : 'peano =
-  Zero
+  match x with
+  | Zero    -> y
+  | Succ x' -> add x' (Succ y)
 ;;
 
+(* p1 = 3 + 2 *)
 let p1 = add (Succ (Succ (Succ Zero))) (Succ (Succ Zero))
 ;;
 
 let rec mult (x: 'peano) (y: 'peano) : 'peano =
-  Zero
+  match x with
+  | Zero      -> Zero           (* x = 0 *)
+  | Succ Zero -> y              (* x = 1 *)
+  | Succ x'   -> add y (mult x' y)
 ;;
 
+(* p2 = 3 * 2 *)
 let p2 = mult (Succ (Succ (Succ Zero))) (Succ (Succ Zero))
 ;;
 
@@ -227,10 +243,18 @@ type ('k,'v) hashmap =
   | Entry of 'k * 'v * ('k,'v) hashmap
 ;;
   
-(* let rec get (m: ('k, 'v) hashmap) (key: 'k) : 'v = *)
-(*   Nil *)
-(* ;; *)
+let rec get (m: ('k, 'v) hashmap) (key: 'k) : 'v =
+  match m with
+  | Nil            -> error "key not found"
+  | Entry (k,v,m') -> if   k = key
+                      then v
+                      else get m' key
+;;
 
 let rec put (m: ('k, 'v) hashmap) (key: 'k) (value: 'v) : ('k,'v) hashmap =
-  Nil
+  match m with
+  | Nil            -> Entry (key, value, Nil)
+  | Entry (k,v,m') -> if k = key
+                      then Entry (k, value, m')
+                      else Entry (k, v, put m' key value)
 ;;
